@@ -1,0 +1,65 @@
+#!/usr/bin/env python3
+# SPDX-FileCopyrightText: 2026 <あなたの氏名>
+# SPDX-License-Identifier: BSD-3-Clause
+
+import sys
+import math
+import argparse
+
+CONVERTERS = {
+    "deg2rad": (math.radians, "度(deg)をラジアン(rad)に変換"),
+    "rad2deg": (math.degrees, "ラジアン(rad)を度(deg)に変換"),
+    "kmh2ms": (lambda v: v / 3.6, "時速(km/h)を秒速(m/s)に変換"),
+    "ms2kmh": (lambda v: v * 3.6, "秒速(m/s)を時速(km/h)に変換"),
+    "c2f": (lambda v: v * 9.0 / 5.0 + 32.0, "摂氏(℃)を華氏(℉)に変換"),
+    "f2c": (lambda v: (v - 32.0) * 5.0 / 9.0, "華氏(℉)を摂氏(℃)に変換"),
+}
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="標準入力から読み込んだ数値を指定した単位に変換します。"
+    )
+    parser.add_argument(
+        "mode",
+        choices=CONVERTERS.keys(),
+        help="変換モード: " + ", ".join(CONVERTERS.keys()),
+    )
+    parser.add_argument(
+        "-r",
+        "--round",
+        type=int,
+        default=6,
+        help="小数点以下の丸め桁数（デフォルト: 6）",
+    )
+    return parser.parse_args()
+
+
+def main():
+    args = parse_args()
+    conv_func, _ = CONVERTERS[args.mode]
+
+    has_input = False
+    for line in sys.stdin:
+        tokens = line.replace(",", " ").split()
+        if not tokens:
+            continue
+        results = []
+        for token in tokens:
+            try:
+                val = float(token)
+            except ValueError:
+                print(f"Error: 数値に変換できない入力です: {token}", file=sys.stderr)
+                sys.exit(1)
+            converted = round(conv_func(val), args.round)
+            results.append(f"{converted:g}")
+        print(" ".join(results))
+        has_input = True
+
+    if not has_input:
+        print("Error: 入力が空です", file=sys.stderr)
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()
